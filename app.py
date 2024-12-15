@@ -24,9 +24,7 @@ def generate_response(uploaded_file, openai_api_key, query_text):
         retriever = db.as_retriever()
         # Create QA chain
         qa = RetrievalQA.from_chain_type(llm=OpenAI(openai_api_key=openai_api_key), chain_type='stuff', retriever=retriever)
-        # Get the top 3 most relevant bits
-        results = qa.run(query_text, top_k=3)
-        return results
+        return qa.run(query_text)
 
 # Page title
 st.set_page_config(page_title='🦜🔗 Ask the Doc App')
@@ -45,9 +43,8 @@ with st.form('myform', clear_on_submit=True):
     if submitted and openai_api_key.startswith('sk-'):
         with st.spinner('Calculating...'):
             response = generate_response(uploaded_file, openai_api_key, query_text)
-            result.extend(response)
+            result.append(response)
             del openai_api_key
 
 if len(result):
-    for res in result:
-        st.info(res)
+    st.info(response)
