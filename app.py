@@ -14,7 +14,7 @@ def generate_response(uploaded_file, openai_api_key, query_text):
     if uploaded_file is not None:
         documents = [uploaded_file.read().decode()]
         # Split documents into chunks
-        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+        text_splitter = CharacterTextSplitter(chunk_size=400, chunk_overlap=0)
         texts = text_splitter.create_documents(documents)
         # Select embeddings
         embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
@@ -24,7 +24,9 @@ def generate_response(uploaded_file, openai_api_key, query_text):
         retriever = db.as_retriever()
         # Create QA chain
         qa = RetrievalQA.from_chain_type(llm=OpenAI(openai_api_key=openai_api_key), chain_type='stuff', retriever=retriever)
-        return qa.run(query_text)
+        # Get the top 3 most relevant bits
+        results = qa.run(query_text, top_k=3)
+        return results
 
 # Page title
 st.set_page_config(page_title='🦜🔗 Ask the Doc App')
@@ -43,8 +45,9 @@ with st.form('myform', clear_on_submit=True):
     if submitted and openai_api_key.startswith('sk-'):
         with st.spinner('Calculating...'):
             response = generate_response(uploaded_file, openai_api_key, query_text)
-            result.append(response)
+            result.extend(response)
             del openai_api_key
 
 if len(result):
-    st.info(response)
+    for res in result:
+        st.info(res)
